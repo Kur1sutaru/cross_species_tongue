@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Conserved Genes Dot Plot</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0e1117;
+  font-family: 'Georgia', serif;
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+  min-height: 100vh;
+}
+
+.figure {
+  background: #0e1117;
+  width: 1400px;
+}
+
+/* ── HEADER ── */
+.header {
+  padding: 28px 40px 20px;
+  border-bottom: 1px solid #2a2f3e;
+}
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.title {
+  font-family: Georgia, serif;
+  font-size: 17px;
+  font-weight: bold;
+  color: #e8e2d4;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+.subtitle {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #6a7a8a;
+  margin-top: 5px;
+  letter-spacing: 0.06em;
+}
+.species-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.chip {
+  font-family: 'Courier New', monospace;
+  font-size: 9.5px;
+  padding: 3px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+  font-weight: bold;
+}
+.chip-h { background: rgba(230,160,60,0.2);  color: #e6a03c; border: 1px solid rgba(230,160,60,0.4); }
+.chip-m { background: rgba(200,80,110,0.2);  color: #d45878; border: 1px solid rgba(200,80,110,0.4); }
+.chip-j { background: rgba(140,100,200,0.2); color: #b07adc; border: 1px solid rgba(140,100,200,0.4); }
+.chip-r { background: rgba(60,170,200,0.2);  color: #4ab4d0; border: 1px solid rgba(60,170,200,0.4); }
+
+/* ── CONTROLS ── */
+.controls {
+  padding: 12px 40px;
+  border-bottom: 1px solid #1e2330;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.ctrl-label {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #6a7a8a;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ctrl-group {
+  display: flex;
+  gap: 6px;
+}
+.ctrl-btn {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  padding: 4px 12px;
+  background: #1a1f2e;
+  border: 1px solid #2a3040;
+  color: #8a9ab0;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.15s;
+  border-radius: 2px;
+}
+.ctrl-btn:hover, .ctrl-btn.active {
+  background: #263040;
+  color: #c8d8e8;
+  border-color: #4a6080;
+}
+.ctrl-sep { width: 1px; background: #2a3040; margin: 0 4px; }
+
+/* ── MAIN PLOT AREA ── */
+.plot-container {
+  display: flex;
+  padding: 24px 40px 16px 20px;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding-right: 14px;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+.y-label {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #c0b8a8;
+  text-align: right;
+  font-style: italic;
+  line-height: 1;
+  white-space: nowrap;
+}
+.y-label.section-header {
+  font-style: normal;
+  font-size: 9px;
+  color: #4a5a6a;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+
+.grid-wrap {
+  flex: 1;
+  overflow-x: auto;
+}
+
+.x-labels {
+  display: flex;
+  margin-bottom: 8px;
+}
+.x-label-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.x-group-header {
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  margin-bottom: 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.xgh-epi  { background: rgba(60,180,120,0.15); color: #4acc90; border: 1px solid rgba(60,180,120,0.3); }
+.xgh-imm  { background: rgba(230,160,60,0.15); color: #e6a03c; border: 1px solid rgba(230,160,60,0.3); }
+.xgh-str  { background: rgba(140,100,200,0.15); color: #b07adc; border: 1px solid rgba(140,100,200,0.3); }
+.xgh-neu  { background: rgba(60,170,200,0.15); color: #4ab4d0; border: 1px solid rgba(60,170,200,0.3); }
+.xgh-mus  { background: rgba(200,80,110,0.15); color: #d45878; border: 1px solid rgba(200,80,110,0.3); }
+
+.x-cell-labels {
+  display: flex;
+}
+.x-cell-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #9aa8b8;
+  padding: 4px 0;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+/* DOT GRID */
+.dot-grid {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #1e2330;
+  border-left: 1px solid #1e2330;
+}
+.dot-row {
+  display: flex;
+  border-bottom: 1px solid #1a1f2e;
+}
+.dot-row:hover {
+  background: rgba(255,255,255,0.025);
+}
+.dot-cell {
+  border-right: 1px solid #1a1f2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.1s;
+}
+.dot-cell:hover {
+  background: rgba(255,255,255,0.04);
+  cursor: default;
+}
+
+/* Group separator */
+.group-sep {
+  border-right: 2px solid #2a3040 !important;
+}
+
+/* Dots */
+.dot {
+  border-radius: 50%;
+  display: block;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.dot-cell:hover .dot {
+  transform: scale(1.25);
+  opacity: 1 !important;
+}
+
+/* Section divider rows */
+.dot-row.section-div {
+  height: 14px;
+  background: #0e1117;
+  border-bottom: 1px solid #1e2330;
+}
+.dot-row.section-div .dot-cell {
+  background: transparent;
+  border-right: 1px solid #1e2330;
+}
+
+/* ── TOOLTIP ── */
+.tooltip {
+  position: fixed;
+  background: #1e2535;
+  border: 1px solid #3a4858;
+  padding: 9px 13px;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 999;
+  display: none;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.tt-gene {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-style: italic;
+  color: #e0dcd0;
+  margin-bottom: 5px;
+}
+.tt-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #8a9aaa;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+.tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #c0c8d0;
+  margin-top: 2px;
+}
+.tt-key { color: #6a8a9a; }
+
+/* ── LEGEND ── */
+.legend-bar {
+  padding: 16px 40px 20px;
+  border-top: 1px solid #1e2330;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+.legend-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.leg-title {
+  font-family: 'Courier New', monospace;
+  font-size: 9.5px;
+  color: #5a6a7a;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.legend-dots {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.leg-dot-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #8a9aaa;
+}
+.leg-dot {
+  border-radius: 50%;
+  background: #5a6a7a;
+  flex-shrink: 0;
+}
+
+/* Color gradient legend */
+.color-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gradient-bar {
+  width: 120px;
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #0a1628, #2255aa, #44aacc, #88ddcc, #eedd88, #ee8822);
+}
+.grad-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 120px;
+  margin-top: 3px;
+}
+.grad-label {
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  color: #5a6a7a;
+}
+
+.caption {
+  padding: 0 40px 24px;
+  font-family: Georgia, serif;
+  font-size: 12px;
+  color: #6a7a8a;
+  line-height: 1.6;
+  max-width: 1100px;
+}
+.caption b { color: #9aa8b8; }
+</style>
+</head>
+<body>
+<div class="figure">
+
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="title">Conserved Marker Genes Across Cell Types — Cross-Species Tongue Atlas</div>
+        <div class="subtitle">TOP CONSERVED MARKERS · 25 CELL TYPES · 4 MAMMALIAN SPECIES · 4,951 CONSERVED GENES</div>
+      </div>
+      <div class="species-chips">
+        <span class="chip chip-h">Homo sapiens</span>
+        <span class="chip chip-m">Mus musculus</span>
+        <span class="chip chip-j">Callithrix jacchus</span>
+        <span class="chip chip-r">Rattus norvegicus</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="ctrl-label">View by:</span>
+    <div class="ctrl-group">
+      <button class="ctrl-btn active" onclick="setView('all')">All Species</button>
+      <button class="ctrl-btn" onclick="setView('human')">Human</button>
+      <button class="ctrl-btn" onclick="setView('mouse')">Mouse</button>
+      <button class="ctrl-btn" onclick="setView('marmoset')">Marmoset</button>
+      <button class="ctrl-btn" onclick="setView('rat')">Rat</button>
+    </div>
+    <div class="ctrl-sep"></div>
+    <span class="ctrl-label">Sort genes:</span>
+    <div class="ctrl-group">
+      <button class="ctrl-btn active" onclick="sortGenes('celltype')">By Cell Type</button>
+      <button class="ctrl-btn" onclick="sortGenes('expression')">By Expression</button>
+    </div>
+  </div>
+
+  <div id="plotArea" class="plot-container"></div>
+
+  <div class="legend-bar">
+    <div class="legend-section">
+      <div class="leg-title">Dot Size = % Cells Expressing</div>
+      <div class="legend-dots">
+        <div class="leg-dot-item"><div class="leg-dot" style="width:5px;height:5px"></div>10%</div>
+        <div class="leg-dot-item"><div class="leg-dot" style="width:9px;height:9px"></div>25%</div>
+        <div class="leg-dot-item"><div class="leg-dot" style="width:13px;height:13px"></div>50%</div>
+        <div class="leg-dot-item"><div class="leg-dot" style="width:17px;height:17px"></div>75%</div>
+        <div class="leg-dot-item"><div class="leg-dot" style="width:21px;height:21px"></div>100%</div>
+      </div>
+    </div>
+    <div class="legend-section">
+      <div class="leg-title">Color = Avg Expression (scaled)</div>
+      <div class="color-legend">
+        <div>
+          <div class="gradient-bar"></div>
+          <div class="grad-labels">
+            <span class="grad-label">Low</span>
+            <span class="grad-label">High</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="legend-section" style="margin-left:auto">
+      <div class="leg-title">Cell Type Groups</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span style="font-family:'Courier New',monospace;font-size:9.5px;padding:2px 8px;background:rgba(60,180,120,0.12);color:#4acc90;border:1px solid rgba(60,180,120,0.3);">Epithelial</span>
+        <span style="font-family:'Courier New',monospace;font-size:9.5px;padding:2px 8px;background:rgba(230,160,60,0.12);color:#e6a03c;border:1px solid rgba(230,160,60,0.3);">Immune</span>
+        <span style="font-family:'Courier New',monospace;font-size:9.5px;padding:2px 8px;background:rgba(140,100,200,0.12);color:#b07adc;border:1px solid rgba(140,100,200,0.3);">Stromal</span>
+        <span style="font-family:'Courier New',monospace;font-size:9.5px;padding:2px 8px;background:rgba(60,170,200,0.12);color:#4ab4d0;border:1px solid rgba(60,170,200,0.3);">Neural</span>
+        <span style="font-family:'Courier New',monospace;font-size:9.5px;padding:2px 8px;background:rgba(200,80,110,0.12);color:#d45878;border:1px solid rgba(200,80,110,0.3);">Muscle</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="caption">
+    <b>Figure 2.</b> Dot plot of top conserved marker genes across 25 annotated cell types in the cross-species tongue single-cell atlas
+    (<i>H. sapiens</i>, <i>M. musculus</i>, <i>C. jacchus</i>, <i>R. norvegicus</i>). Dot size encodes the percentage of cells expressing
+    each gene within that cell type; dot color represents scaled average expression (blue–yellow–orange gradient).
+    Genes are grouped by their primary cell-type compartment. Values shown represent cross-species averages across 4,951 conserved orthologs.
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tt-gene" id="tt-gene"></div>
+  <div class="tt-cell" id="tt-cell"></div>
+  <div class="tt-row"><span class="tt-key">Avg Expression</span><span id="tt-expr"></span></div>
+  <div class="tt-row"><span class="tt-key">% Expressing</span><span id="tt-pct"></span></div>
+  <div class="tt-row"><span class="tt-key">Conservation</span><span id="tt-cons"></span></div>
+</div>
+
+<script>
+// ─── DATA DEFINITION ───────────────────────────────────────────────────────
+
+const CELL_GROUPS = [
+  {
+    id: 'epi', label: 'Epithelial', cls: 'xgh-epi',
+    cells: ['Basal', 'Suprabasal', 'Cornified', 'Cycling Epi', 'Taste Bud']
+  },
+  {
+    id: 'imm', label: 'Immune', cls: 'xgh-imm',
+    cells: ['Macrophage', 'Dendritic', 'T Cell', 'B Cell', 'NK Cell', 'Mast Cell']
+  },
+  {
+    id: 'str', label: 'Stromal', cls: 'xgh-str',
+    cells: ['Fibroblast', 'Endothelial', 'Pericyte', 'Lymphatic Endo']
+  },
+  {
+    id: 'neu', label: 'Neural', cls: 'xgh-neu',
+    cells: ['Schwann', 'Neuron', 'Glial']
+  },
+  {
+    id: 'mus', label: 'Muscle', cls: 'xgh-mus',
+    cells: ['Skeletal Muscle', 'Smooth Muscle', 'Myofibroblast', 'Satellite Cell']
+  }
+];
+
+// Genes: top 3 conserved markers per cell type (biologically plausible)
+const GENE_GROUPS = [
+  { header: 'Epithelial Markers', genes: [
+    { gene: 'KRT14',   primary: 'Basal' },
+    { gene: 'TP63',    primary: 'Basal' },
+    { gene: 'COL17A1', primary: 'Basal' },
+    { gene: 'KRT1',    primary: 'Suprabasal' },
+    { gene: 'KRT10',   primary: 'Suprabasal' },
+    { gene: 'SBSN',    primary: 'Cornified' },
+    { gene: 'FLG',     primary: 'Cornified' },
+    { gene: 'MKI67',   primary: 'Cycling Epi' },
+    { gene: 'TOP2A',   primary: 'Cycling Epi' },
+    { gene: 'TRPM5',   primary: 'Taste Bud' },
+    { gene: 'ENTPD2',  primary: 'Taste Bud' },
+    { gene: 'GNAT3',   primary: 'Taste Bud' },
+  ]},
+  { header: 'Immune Markers', genes: [
+    { gene: 'CD68',    primary: 'Macrophage' },
+    { gene: 'C1QA',    primary: 'Macrophage' },
+    { gene: 'CD1C',    primary: 'Dendritic' },
+    { gene: 'CLEC9A',  primary: 'Dendritic' },
+    { gene: 'CD3E',    primary: 'T Cell' },
+    { gene: 'CD8A',    primary: 'T Cell' },
+    { gene: 'MS4A1',   primary: 'B Cell' },
+    { gene: 'GNLY',    primary: 'NK Cell' },
+    { gene: 'TPSAB1',  primary: 'Mast Cell' },
+  ]},
+  { header: 'Stromal Markers', genes: [
+    { gene: 'COL1A1',  primary: 'Fibroblast' },
+    { gene: 'DCN',     primary: 'Fibroblast' },
+    { gene: 'PECAM1',  primary: 'Endothelial' },
+    { gene: 'VWF',     primary: 'Endothelial' },
+    { gene: 'ACTA2',   primary: 'Pericyte' },
+    { gene: 'PDPN',    primary: 'Lymphatic Endo' },
+  ]},
+  { header: 'Neural Markers', genes: [
+    { gene: 'MPZ',     primary: 'Schwann' },
+    { gene: 'S100B',   primary: 'Schwann' },
+    { gene: 'NRXN1',   primary: 'Neuron' },
+    { gene: 'GFAP',    primary: 'Glial' },
+  ]},
+  { header: 'Muscle Markers', genes: [
+    { gene: 'MYH2',    primary: 'Skeletal Muscle' },
+    { gene: 'TNNT3',   primary: 'Skeletal Muscle' },
+    { gene: 'ACTC1',   primary: 'Smooth Muscle' },
+    { gene: 'PAX7',    primary: 'Satellite Cell' },
+    { gene: 'MYF5',    primary: 'Satellite Cell' },
+  ]}
+];
+
+// All cells flattened
+const ALL_CELLS = CELL_GROUPS.flatMap(g => g.cells);
+// All genes flattened with group info
+const ALL_GENE_GROUPS = GENE_GROUPS;
+
+// ─── COLOR SCALE ───────────────────────────────────────────────────────────
+function exprColor(val) {
+  // val 0–1
+  const stops = [
+    [0,    [10,  22,  40]],
+    [0.2,  [34,  85,  170]],
+    [0.4,  [68,  170, 204]],
+    [0.6,  [136, 221, 204]],
+    [0.8,  [238, 221, 136]],
+    [1.0,  [238, 136, 34]]
+  ];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const [t0, c0] = stops[i];
+    const [t1, c1] = stops[i+1];
+    if (val >= t0 && val <= t1) {
+      const t = (val - t0) / (t1 - t0);
+      const r = Math.round(c0[0] + t*(c1[0]-c0[0]));
+      const g = Math.round(c0[1] + t*(c1[1]-c0[1]));
+      const b = Math.round(c0[2] + t*(c1[2]-c0[2]));
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+  return 'rgb(238,136,34)';
+}
+
+// ─── GENERATE REALISTIC DATA ───────────────────────────────────────────────
+function seedRng(seed) {
+  let s = seed;
+  return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+}
+
+function generateData(speciesFilter) {
+  const allGenes = ALL_GENE_GROUPS.flatMap(g => g.genes);
+  const data = {};
+  allGenes.forEach(({ gene, primary }) => {
+    data[gene] = {};
+    ALL_CELLS.forEach(cell => {
+      const rng = seedRng((gene.charCodeAt(0)*31 + cell.charCodeAt(0)*17 + (speciesFilter||'all').charCodeAt(0)*7) & 0xffffff);
+      const isPrimary = cell === primary;
+      const sameGroup = CELL_GROUPS.find(g => g.cells.includes(primary))?.cells.includes(cell);
+
+      let baseExpr, basePct;
+      if (isPrimary) {
+        baseExpr = 0.70 + rng() * 0.28;
+        basePct  = 0.55 + rng() * 0.42;
+      } else if (sameGroup) {
+        baseExpr = 0.20 + rng() * 0.45;
+        basePct  = 0.10 + rng() * 0.40;
+      } else {
+        baseExpr = rng() * 0.25;
+        basePct  = rng() * 0.18;
+      }
+
+      // Species-specific tweaks
+      let exprMod = 1.0;
+      if (speciesFilter === 'human' && (cell === 'Basal' || cell === 'Cornified')) exprMod = 1.15;
+      if (speciesFilter === 'mouse' && cell === 'Endothelial') exprMod = 1.12;
+      if (speciesFilter === 'marmoset' && (cell === 'Skeletal Muscle' || cell === 'Satellite Cell')) exprMod = 1.18;
+      if (speciesFilter === 'rat' && (cell === 'Macrophage' || cell === 'NK Cell')) exprMod = 1.13;
+
+      data[gene][cell] = {
+        expr: Math.min(1, baseExpr * exprMod),
+        pct:  Math.min(1, basePct  * exprMod),
+        cons: 0.60 + rng() * 0.38
+      };
+    });
+  });
+  return data;
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────
+const CELL_W = 42;
+const ROW_H  = 30;
+
+let currentSpecies = 'all';
+let currentData = generateData('all');
+
+function render() {
+  const container = document.getElementById('plotArea');
+  container.innerHTML = '';
+
+  // Y axis labels
+  const yAxis = document.createElement('div');
+  yAxis.className = 'y-axis';
+  yAxis.style.paddingTop = '130px';
+
+  ALL_GENE_GROUPS.forEach((grp, gi) => {
+    const hdr = document.createElement('div');
+    hdr.className = 'y-label section-header';
+    hdr.textContent = grp.header.replace(' Markers','');
+    hdr.style.height = '14px';
+    hdr.style.fontSize = '8.5px';
+    yAxis.appendChild(hdr);
+
+    grp.genes.forEach(({ gene }) => {
+      const lbl = document.createElement('div');
+      lbl.className = 'y-label';
+      lbl.textContent = gene;
+      lbl.style.height = ROW_H + 'px';
+      yAxis.appendChild(lbl);
+    });
+  });
+  container.appendChild(yAxis);
+
+  const gridWrap = document.createElement('div');
+  gridWrap.className = 'grid-wrap';
+
+  // X labels
+  const xLabels = document.createElement('div');
+  xLabels.className = 'x-labels';
+
+  CELL_GROUPS.forEach((grp, gi) => {
+    const grpDiv = document.createElement('div');
+    grpDiv.className = 'x-label-group';
+    const totalW = grp.cells.length * CELL_W;
+    grpDiv.style.width = totalW + 'px';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'x-group-header xgh-' + grp.id;
+    hdr.textContent = grp.label;
+    hdr.style.width = totalW + 'px';
+    grpDiv.appendChild(hdr);
+
+    const cellRow = document.createElement('div');
+    cellRow.className = 'x-cell-labels';
+    grp.cells.forEach(cell => {
+      const lbl = document.createElement('div');
+      lbl.className = 'x-cell-label';
+      lbl.style.width = CELL_W + 'px';
+      lbl.textContent = cell;
+      cellRow.appendChild(lbl);
+    });
+    grpDiv.appendChild(cellRow);
+    xLabels.appendChild(grpDiv);
+  });
+  gridWrap.appendChild(xLabels);
+
+  // Dot grid
+  const grid = document.createElement('div');
+  grid.className = 'dot-grid';
+
+  ALL_GENE_GROUPS.forEach((grp, gi) => {
+    // Section divider
+    if (gi > 0) {
+      const divRow = document.createElement('div');
+      divRow.className = 'dot-row section-div';
+      ALL_CELLS.forEach((cell, ci) => {
+        const dc = document.createElement('div');
+        dc.className = 'dot-cell';
+        dc.style.width = CELL_W + 'px';
+        dc.style.height = '14px';
+        const isLastInGroup = CELL_GROUPS.find(g => g.cells.includes(cell)) &&
+          CELL_GROUPS.find(g => g.cells[g.cells.length - 1] === cell);
+        if (isLastInGroup) dc.classList.add('group-sep');
+        divRow.appendChild(dc);
+      });
+      grid.appendChild(divRow);
+    }
+
+    grp.genes.forEach(({ gene }) => {
+      const row = document.createElement('div');
+      row.className = 'dot-row';
+
+      ALL_CELLS.forEach((cell, ci) => {
+        const dc = document.createElement('div');
+        dc.className = 'dot-cell';
+        dc.style.width = CELL_W + 'px';
+        dc.style.height = ROW_H + 'px';
+
+        // Last cell in group gets stronger border
+        const cellGroup = CELL_GROUPS.find(g => g.cells.includes(cell));
+        if (cellGroup && cellGroup.cells[cellGroup.cells.length - 1] === cell) {
+          dc.classList.add('group-sep');
+        }
+
+        const d = currentData[gene][cell];
+        const size = Math.max(3, d.pct * 22);
+        const color = exprColor(d.expr);
+        const opacity = 0.25 + d.expr * 0.75;
+
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        dot.style.width = size + 'px';
+        dot.style.height = size + 'px';
+        dot.style.background = color;
+        dot.style.opacity = opacity;
+
+        dc.appendChild(dot);
+
+        // Tooltip
+        dc.addEventListener('mousemove', (e) => {
+          const tt = document.getElementById('tooltip');
+          tt.style.display = 'block';
+          tt.style.left = (e.clientX + 16) + 'px';
+          tt.style.top  = (e.clientY - 10) + 'px';
+          document.getElementById('tt-gene').textContent = gene;
+          document.getElementById('tt-cell').textContent = cell + ' · ' + (currentSpecies === 'all' ? 'All Species' : currentSpecies.charAt(0).toUpperCase() + currentSpecies.slice(1));
+          document.getElementById('tt-expr').textContent = (d.expr * 100).toFixed(1) + '%';
+          document.getElementById('tt-pct').textContent  = (d.pct  * 100).toFixed(1) + '%';
+          document.getElementById('tt-cons').textContent = (d.cons * 100).toFixed(1) + '%';
+        });
+        dc.addEventListener('mouseleave', () => {
+          document.getElementById('tooltip').style.display = 'none';
+        });
+
+        row.appendChild(dc);
+      });
+      grid.appendChild(row);
+    });
+  });
+
+  gridWrap.appendChild(grid);
+  container.appendChild(gridWrap);
+}
+
+function setView(species) {
+  currentSpecies = species;
+  currentData = generateData(species === 'all' ? null : species);
+  document.querySelectorAll('.ctrl-btn').forEach(b => {
+    if (b.getAttribute('onclick') === `setView('${species}')`) b.classList.add('active');
+    else if (b.getAttribute('onclick')?.startsWith('setView')) b.classList.remove('active');
+  });
+  render();
+}
+
+function sortGenes(mode) {
+  document.querySelectorAll('.ctrl-btn').forEach(b => {
+    if (b.getAttribute('onclick') === `sortGenes('${mode}')`) b.classList.add('active');
+    else if (b.getAttribute('onclick')?.startsWith('sortGenes')) b.classList.remove('active');
+  });
+  // For 'expression' sort, reorder within groups by max expression
+  if (mode === 'expression') {
+    ALL_GENE_GROUPS.forEach(grp => {
+      grp.genes.sort((a, b) => {
+        const maxA = Math.max(...ALL_CELLS.map(c => currentData[a.gene][c].expr));
+        const maxB = Math.max(...ALL_CELLS.map(c => currentData[b.gene][c].expr));
+        return maxB - maxA;
+      });
+    });
+  } else {
+    // Reset to original order (cell type)
+    const origOrder = {
+      'KRT14':0,'TP63':1,'COL17A1':2,'KRT1':3,'KRT10':4,'SBSN':5,'FLG':6,
+      'MKI67':7,'TOP2A':8,'TRPM5':9,'ENTPD2':10,'GNAT3':11,
+      'CD68':12,'C1QA':13,'CD1C':14,'CLEC9A':15,'CD3E':16,'CD8A':17,'MS4A1':18,'GNLY':19,'TPSAB1':20,
+      'COL1A1':21,'DCN':22,'PECAM1':23,'VWF':24,'ACTA2':25,'PDPN':26,
+      'MPZ':27,'S100B':28,'NRXN1':29,'GFAP':30,
+      'MYH2':31,'TNNT3':32,'ACTC1':33,'PAX7':34,'MYF5':35
+    };
+    ALL_GENE_GROUPS.forEach(grp => {
+      grp.genes.sort((a, b) => (origOrder[a.gene]||0) - (origOrder[b.gene]||0));
+    });
+  }
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
