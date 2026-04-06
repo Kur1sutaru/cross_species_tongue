@@ -4,6 +4,8 @@ A fully reproducible pipeline for **cross-species single-cell RNA-seq integratio
 
 This workflow covers ortholog mapping, Harmony integration, cell type annotation, conservation scoring, functional enrichment, and publication-quality figure generation.
 
+OSF repository available at <https://doi.org/10.17605/OSF.IO/4M98Q>
+
 ---
 
 ## 📁 Repository Structure
