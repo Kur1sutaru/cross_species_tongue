@@ -311,61 +311,11 @@ conserved_markers$conservation_class <- cut(
 
 ---
 
-## Step 8 — GSEA and KEGG Pathway Enrichment
 
-**Script:** `gsea_kegg_analysis.R`
-
-Gene Set Enrichment Analysis (GSEA) and KEGG over-representation analysis are run on the conserved marker lists per cell type to identify enriched biological processes.
-
-```r
-library(clusterProfiler)
-library(org.Hs.eg.db)
-
-# Convert gene symbols to Entrez IDs
-gene_list <- conserved_markers$mean_logFC
-names(gene_list) <- rownames(conserved_markers)
-gene_list <- sort(gene_list, decreasing = TRUE)
-
-# GSEA
-gsea_res <- gseGO(
-  geneList     = gene_list,
-  OrgDb        = org.Hs.eg.db,
-  ont          = "BP",
-  keyType      = "SYMBOL",
-  pvalueCutoff = 0.05,
-  verbose      = FALSE
-)
-
-# KEGG (requires Entrez IDs)
-entrez_ids <- bitr(names(gene_list), fromType = "SYMBOL",
-                   toType = "ENTREZID", OrgDb = org.Hs.eg.db)
-
-kegg_res <- enrichKEGG(
-  gene         = entrez_ids$ENTREZID,
-  organism     = "hsa",
-  pvalueCutoff = 0.05
-)
-
-dotplot(gsea_res, showCategory = 20)
-dotplot(kegg_res, showCategory = 20)
-```
 
 ---
 
-## Step 9 — Figure Generation
 
-Key publication figures produced by this pipeline:
-
-| Figure | Description | Output |
-|--------|-------------|--------|
-| UMAP — species | Cells colored by species | `umap_species.pdf` |
-| UMAP — cell type | Cells colored by annotated cell type | `umap_celltype.pdf` |
-| Dotplot — markers | Top markers per cell type across species | `dotplot_markers.pdf` |
-| Conservation heatmap | CV-classified genes per cell type | `heatmap_conservation.pdf` |
-| Jaccard similarity matrix | Cell type overlap across species | `jaccard_matrix.pdf` |
-| UpSet plot | Shared vs. species-specific conserved genes | `upset_conservation.pdf` |
-| GSEA dotplot | Enriched GO/KEGG terms per cell type | `gsea_dotplot.pdf` |
-| Species barplot | Cell type proportions per species | `barplot_species.pdf` |
 
 ---
 
