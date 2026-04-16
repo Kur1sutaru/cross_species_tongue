@@ -335,7 +335,7 @@ If you use this pipeline, please cite:
 
 ## 🤝 Contact
 
-**Gerda Cristal Villalba Silva, PhD**  
+**Cristal Villalba, Msc PhD**  
 Postdoctoral Fellow — Center for Pain Therapeutics and Addiction Research (CPTAR)  
 UT Health San Antonio, School of Dentistry  
 📧 [villalbasilva@uthscsa.edu]
